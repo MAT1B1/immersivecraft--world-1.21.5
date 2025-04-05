@@ -12,6 +12,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
 
 import java.util.List;
+import java.util.Map;
 
 public class WorldGrowthManager {
 
@@ -35,8 +36,20 @@ public class WorldGrowthManager {
             Blocks.OXEYE_DAISY,
             Blocks.FERN,
             Blocks.BUSH,
-            Blocks.FIREFLY_BUSH
+            Blocks.FIREFLY_BUSH,
+            Blocks.WILDFLOWERS
     );
+
+    private static final Map<Block, Block> LOG_TO_SAPLING = Map.of(
+            Blocks.OAK_LOG, Blocks.OAK_SAPLING,
+            Blocks.BIRCH_LOG, Blocks.BIRCH_SAPLING,
+            Blocks.SPRUCE_LOG, Blocks.SPRUCE_SAPLING,
+            Blocks.JUNGLE_LOG, Blocks.JUNGLE_SAPLING,
+            Blocks.ACACIA_LOG, Blocks.ACACIA_SAPLING,
+            Blocks.DARK_OAK_LOG, Blocks.DARK_OAK_SAPLING,
+            Blocks.CHERRY_LOG, Blocks.CHERRY_SAPLING
+    );
+
 
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(WorldGrowthManager::onWorldTick);
@@ -62,16 +75,23 @@ public class WorldGrowthManager {
                 BlockState ground = world.getBlockState(groundPos);
                 BlockState above = world.getBlockState(abovePos);
 
-                trySpawnGrass(world, ground, above, abovePos, random);
+                trySpawnGrass(world, ground, above, abovePos);
+
+                Block block = ground.getBlock();
+
+                if (isTreeLog(block)) {
+                    trySpreadSapling(world, groundPos, block, random);
+                }
             }
         }
     }
 
     private static void trySpawnGrass(ServerWorld world, BlockState ground, BlockState above,
-                                      BlockPos abovePos, Random random) {
+                                      BlockPos abovePos) {
         if (!ground.isOf(Blocks.GRASS_BLOCK)) return;
+        if (!world.isSkyVisible(abovePos)) return;
 
-        if (above.isOf(Blocks.SHORT_GRASS) && random.nextFloat() < 0.5f) {
+        if (above.isOf(Blocks.SHORT_GRASS)) {
             BlockPos top = abovePos.up();
             if (world.getBlockState(top).isAir()) {
                 world.setBlockState(abovePos, Blocks.TALL_GRASS.getDefaultState()
@@ -95,4 +115,36 @@ public class WorldGrowthManager {
         }
         world.setBlockState(abovePos, Blocks.SHORT_GRASS.getDefaultState());
     }
+
+    private static void trySpreadSapling(ServerWorld world, BlockPos origin, Block logBlock, Random random) {
+        Block sapling = LOG_TO_SAPLING.get(logBlock);
+
+        for (int i = 0; i < 10; i++) {
+            int dx = random.nextBetween(-10, 11);
+            int dz = random.nextBetween(-10, 11);
+            BlockPos basePos = origin.add(dx, 0, dz);
+            BlockPos surfacePos = world.getTopPosition(net.minecraft.world.Heightmap.Type.WORLD_SURFACE, basePos).down();
+
+            for (int dy = -1; dy <= 1; dy++) {
+                BlockPos ground = surfacePos.up(dy);
+                BlockPos saplingPos = ground.up();
+
+                BlockState groundState = world.getBlockState(ground);
+                BlockState targetState = world.getBlockState(saplingPos);
+
+                if (groundState.isOf(Blocks.GRASS_BLOCK)
+                        && (targetState.isAir() || PROPAGATE_PLANTS.contains(targetState.getBlock()))
+                        && random.nextFloat() < 0.1f) {
+
+                    world.setBlockState(saplingPos, sapling.getDefaultState());
+                    return;
+                }
+            }
+        }
+    }
+
+    private static boolean isTreeLog(Block block) {
+        return LOG_TO_SAPLING.containsKey(block);
+    }
+
 }
