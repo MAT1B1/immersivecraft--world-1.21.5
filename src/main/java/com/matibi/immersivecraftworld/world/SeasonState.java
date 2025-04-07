@@ -17,7 +17,6 @@ public class SeasonState extends PersistentState {
             Codec.INT.fieldOf("ticks").forGetter(state -> state.ticksSinceSeasonStart)
     ).apply(instance, SeasonState::new));
 
-    // --- Type Fabric moderne
     public static final PersistentStateType<SeasonState> TYPE = new PersistentStateType<>(
             "season_state",
             SeasonState::new,  // <- Ce constructeur-là
@@ -25,12 +24,10 @@ public class SeasonState extends PersistentState {
             DataFixTypes.SAVED_DATA_RANDOM_SEQUENCES
     );
 
-    // --- Accès
     public static SeasonState get(ServerWorld world) {
         return world.getPersistentStateManager().getOrCreate(TYPE);
     }
 
-    // --- Méthodes utiles
     public void setSeason(int season) {
         this.currentSeason = season;
         this.ticksSinceSeasonStart = 0;
@@ -57,5 +54,10 @@ public class SeasonState extends PersistentState {
 
     public int getTicksSinceSeasonStart() {
         return ticksSinceSeasonStart;
+    }
+
+    public void setTicksSinceSeasonStart(int ticksSinceSeasonStart) {
+        this.ticksSinceSeasonStart = ticksSinceSeasonStart;
+        markDirty();
     }
 }

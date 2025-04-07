@@ -1,10 +1,11 @@
 {
-	"required": true,
-	"package": "com.matibi.immersivecraftworld.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"mixins": [
-	],
-	"injectors": {
-		"defaultRequire": 1
+  "required": true,
+  "package": "com.matibi.immersivecraftworld.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ServerWorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
 	}
 }
