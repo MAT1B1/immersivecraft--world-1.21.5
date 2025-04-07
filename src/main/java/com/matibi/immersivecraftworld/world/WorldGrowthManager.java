@@ -10,6 +10,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.chunk.Chunk;
 
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,7 @@ public class WorldGrowthManager {
 
     private static int TickCounter = 0;
 
-    private static final int SCAN_RADIUS = 20;
+    private static final int SCAN_RADIUS = 30;
     private static final int SCAN_HEIGHT = 10;
     private static final int POSITIONS_PER_PLAYER = 20;
 
