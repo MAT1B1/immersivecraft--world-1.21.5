@@ -1,5 +1,6 @@
 package com.matibi.immersivecraftworld.world;
 
+import com.matibi.immersivecraftworld.ImmersiveCraftWorld;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -52,6 +53,7 @@ public class WorldGrowthManager {
 
 
     public static void register() {
+        ImmersiveCraftWorld.LOGGER.info("Registering the growth manager from " + ImmersiveCraftWorld.MOD_ID);
         ServerTickEvents.END_WORLD_TICK.register(WorldGrowthManager::onWorldTick);
     }
 
