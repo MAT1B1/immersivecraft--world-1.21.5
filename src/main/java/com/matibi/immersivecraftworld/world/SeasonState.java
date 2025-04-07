@@ -8,8 +8,8 @@ import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateType;
 
 public class SeasonState extends PersistentState {
-    private int currentSeason = 0;
-    private int ticksSinceSeasonStart = 0;
+    private int currentSeason;
+    private int ticksSinceSeasonStart;
 
     // --- Codec pour la persistance
     public static final Codec<SeasonState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
