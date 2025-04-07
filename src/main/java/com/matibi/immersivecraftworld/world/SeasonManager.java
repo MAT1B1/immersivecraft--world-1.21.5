@@ -16,7 +16,7 @@ public class SeasonManager {
         state.tick();
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            player.sendMessage(Text.literal("Season " + state.getSeason() + ", ticks : " + state.getTicksSinceSeasonStart()), true);
+            player.sendMessage(Text.literal("Season " + seasonName(state.getSeason()) + ", ticks : " + state.getTicksSinceSeasonStart()), true);
         }
 
         if (state.getTicksSinceSeasonStart() >= DAYS_PER_SEASON * 24000) {
