@@ -118,7 +118,7 @@ public class WorldGrowthManager {
                 return;
             }
         }
-        world.setBlockState(abovePos, Blocks.YELLOW_CONCRETE.getDefaultState());
+        world.setBlockState(abovePos, Blocks.SHORT_GRASS.getDefaultState());
     }
 
     private static void trySpreadSapling(ServerWorld world, BlockPos origin, Block logBlock, Random random) {
