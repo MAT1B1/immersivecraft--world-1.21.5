@@ -22,6 +22,7 @@ public class SeasonCommand {
                             SeasonState state = SeasonState.get(ctx.getSource().getServer().getOverworld());
                             int nextSeason = (state.getSeason() + 1) % 4;
                             state.setSeason(nextSeason);
+                            SeasonManager.onSeasonChange(ctx.getSource().getServer(), nextSeason);
                             ctx.getSource().sendFeedback(() -> Text.literal("Season changed to " + SeasonManager.seasonName(nextSeason)), true);
                             return 1;
                         })
@@ -48,6 +49,7 @@ public class SeasonCommand {
 
                                     SeasonState state = SeasonState.get(ctx.getSource().getServer().getOverworld());
                                     state.setSeason(index);
+                                    SeasonManager.onSeasonChange(ctx.getSource().getServer(), index);
                                     ctx.getSource().sendFeedback(() -> Text.literal("Season set to " + SeasonManager.seasonName(index)), true);
                                     return 1;
                                 })

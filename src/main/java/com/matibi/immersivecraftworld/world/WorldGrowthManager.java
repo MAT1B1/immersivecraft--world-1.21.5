@@ -1,27 +1,24 @@
 package com.matibi.immersivecraftworld.world;
 
 import com.matibi.immersivecraftworld.ImmersiveCraftWorld;
+import com.matibi.immersivecraftworld.util.ChunkTracker;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.Heightmap;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class WorldGrowthManager {
 
     private static int TickCounter = 0;
-
-    private static final int SCAN_RADIUS = 30;
-    private static final int SCAN_HEIGHT = 10;
-    private static final int POSITIONS_PER_PLAYER = 20;
 
     private static final List<Block> PROPAGATE_PLANTS = List.of(
             Blocks.SHORT_GRASS,
@@ -63,27 +60,33 @@ public class WorldGrowthManager {
 
         Random random = world.getRandom();
 
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            BlockPos center = player.getBlockPos();
+        Set<ChunkPos> loadedChunks = ChunkTracker.getLoadedChunks();
+        List<ChunkPos> chunkList = new ArrayList<>(loadedChunks);
+        Collections.shuffle(chunkList);
+        int maxChunksPerTick = 10;
+        int processed = 0;
 
-            for (int i = 0; i < POSITIONS_PER_PLAYER; i++) {
-                int dx = random.nextBetween(-SCAN_RADIUS, SCAN_RADIUS + 1);
-                int dz = random.nextBetween(-SCAN_RADIUS, SCAN_RADIUS + 1);
-                int dy = random.nextBetween(-SCAN_HEIGHT, SCAN_HEIGHT + 1);
+        for (ChunkPos chunkPos : chunkList) {
+            if (processed++ >= maxChunksPerTick) break;
+        BlockPos.Mutable groundPos = new BlockPos.Mutable();
+            BlockPos.Mutable abovePos = new BlockPos.Mutable();
 
-                BlockPos groundPos = center.add(dx, dy, dz);
-                BlockPos abovePos = groundPos.up();
+            int x = chunkPos.getStartX() + random.nextInt(16);
+            int z = chunkPos.getStartZ() + random.nextInt(16);
+            int y = world.getTopY(Heightmap.Type.WORLD_SURFACE, x, z) - 1;
 
-                BlockState ground = world.getBlockState(groundPos);
-                BlockState above = world.getBlockState(abovePos);
+            groundPos.set(x, y, z);
+            abovePos.set(x, y + 1, z);
 
-                trySpawnGrass(world, ground, above, abovePos);
+            BlockState ground = world.getBlockState(groundPos);
+            BlockState above = world.getBlockState(abovePos);
 
-                Block block = ground.getBlock();
+            trySpawnGrass(world, ground, above, abovePos);
 
-                if (isTreeLog(block)) {
-                    trySpreadSapling(world, groundPos, block, random);
-                }
+            Block block = ground.getBlock();
+
+            if (isTreeLog(block)) {
+                trySpreadSapling(world, groundPos, block, random);
             }
         }
     }
@@ -115,7 +118,7 @@ public class WorldGrowthManager {
                 return;
             }
         }
-        world.setBlockState(abovePos, Blocks.SHORT_GRASS.getDefaultState());
+        world.setBlockState(abovePos, Blocks.YELLOW_CONCRETE.getDefaultState());
     }
 
     private static void trySpreadSapling(ServerWorld world, BlockPos origin, Block logBlock, Random random) {
@@ -135,8 +138,7 @@ public class WorldGrowthManager {
                 BlockState targetState = world.getBlockState(saplingPos);
 
                 if (groundState.isOf(Blocks.GRASS_BLOCK)
-                        && (targetState.isAir() || PROPAGATE_PLANTS.contains(targetState.getBlock()))
-                        && random.nextFloat() < 0.1f) {
+                        && (targetState.isAir() || PROPAGATE_PLANTS.contains(targetState.getBlock()))) {
 
                     world.setBlockState(saplingPos, sapling.getDefaultState());
                     return;

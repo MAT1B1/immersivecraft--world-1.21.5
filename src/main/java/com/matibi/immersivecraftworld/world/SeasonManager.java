@@ -1,12 +1,19 @@
 package com.matibi.immersivecraftworld.world;
 
+import com.matibi.immersivecraftworld.command.SeasonCommand;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
 
 public class SeasonManager {
     private static final int DAYS_PER_SEASON = 10;
+
+    public static void register(){
+        ServerTickEvents.END_SERVER_TICK.register(SeasonManager::tick);
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+                SeasonCommand.register(dispatcher));
+    }
 
     public static void tick(MinecraftServer server) {
         ServerWorld world = server.getOverworld();
@@ -15,20 +22,15 @@ public class SeasonManager {
         SeasonState state = SeasonState.get(world);
         state.tick();
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            player.sendMessage(Text.literal("Season " + seasonName(state.getSeason()) + ", ticks : " + state.getTicksSinceSeasonStart()), true);
-        }
-
         if (state.getTicksSinceSeasonStart() >= DAYS_PER_SEASON * 24000) {
-            int newSeason = (state.getSeason() + 1) % 4; // 4 seasons (0 à 3)
+            int newSeason = (state.getSeason() + 1) % 4;
             state.setSeason(newSeason);
             onSeasonChange(server, newSeason);
         }
     }
 
-    private static void onSeasonChange(MinecraftServer server, int newSeason) {
-        System.out.println("New season : " + seasonName(newSeason));
-
+    public static void onSeasonChange(MinecraftServer server, int newSeason) {
+        ServerWorld world = server.getOverworld();
     }
 
     public static String seasonName(int season) {
