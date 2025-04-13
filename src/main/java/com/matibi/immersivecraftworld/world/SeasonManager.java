@@ -3,8 +3,12 @@ package com.matibi.immersivecraftworld.world;
 import com.matibi.immersivecraftworld.command.SeasonCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.random.Random;
 
 public class SeasonManager {
     private static final int DAYS_PER_SEASON = 10;
@@ -27,10 +31,33 @@ public class SeasonManager {
             state.setSeason(newSeason);
             onSeasonChange(server, newSeason);
         }
+
+        Random random = world.getRandom();
+        if (SeasonManager.seasonName(state.getSeason()).equals("Winter")) {
+            for (ServerPlayerEntity player : world.getPlayers()) {
+                BlockPos base = player.getBlockPos();
+
+                for (int i = 0; i < 15; i++) {
+                    int dx = random.nextBetween(-10, 11);
+                    int dz = random.nextBetween(-10, 11);
+                    int dy = random.nextBetween(1, 6); // simulate falling from the sky
+
+                    BlockPos pos = base.add(dx, dy, dz);
+                    if (!world.getBlockState(pos).isAir()) continue;
+
+                    world.spawnParticles(
+                            ParticleTypes.SNOWFLAKE,
+                            pos.getX() + 0.5,
+                            pos.getY(),
+                            pos.getZ() + 0.5,
+                            1, 0.2, 0.5, 0.2, 0.01
+                    );
+                }
+            }
+        }
     }
 
     public static void onSeasonChange(MinecraftServer server, int newSeason) {
-        ServerWorld world = server.getOverworld();
     }
 
     public static String seasonName(int season) {

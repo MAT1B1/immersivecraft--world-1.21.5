@@ -63,7 +63,7 @@ public class WorldGrowthManager {
         Set<ChunkPos> loadedChunks = ChunkTracker.getLoadedChunks();
         List<ChunkPos> chunkList = new ArrayList<>(loadedChunks);
         Collections.shuffle(chunkList);
-        int maxChunksPerTick = 10;
+        int maxChunksPerTick = 2;
         int processed = 0;
 
         for (ChunkPos chunkPos : chunkList) {
@@ -82,15 +82,13 @@ public class WorldGrowthManager {
             BlockState ground = world.getBlockState(groundPos);
             BlockState above = world.getBlockState(abovePos);
 
-            trySpawnGrass(world, ground, above, abovePos);
-
             SeasonState state = SeasonState.get(world);
 
             switch (SeasonManager.seasonName(state.getSeason())) {
-                case "Winter" -> tryApplyIce(world, ground, groundPos,abovePos);
+                case "Winter" -> tryApplyIce(world, ground, groundPos, abovePos, random);
                 case "Summer" -> tryDehydrateGrass(world, groundPos);
                 case "Spring" -> trySpawnFlowers(world, abovePos, ground, above, random);
-                case "Autumn" -> {}
+                case "Autumn" -> trySpawnGrass(world, ground, above, abovePos);
             }
 
             Block block = ground.getBlock();
@@ -157,10 +155,47 @@ public class WorldGrowthManager {
         }
     }
 
-    private static void tryApplyIce(ServerWorld world, BlockState ground, BlockPos groundPos, BlockPos abovePos) {
-        BlockState above = world.getBlockState(abovePos);
-        if (world.isSkyVisible(abovePos) && above.isAir() && ground.isOf(Blocks.WATER)) {
-            world.setBlockState(groundPos, Blocks.ICE.getDefaultState());
+    private static void tryApplyIce(ServerWorld world, BlockState ground, BlockPos groundPos, BlockPos abovePos, Random random) {
+        if (ground.isOf(Blocks.WATER) && world.isSkyVisible(abovePos)) {
+            int radius = 2 + random.nextInt(2);
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (random.nextFloat() > 0.6f) continue;
+
+                    BlockPos targetPos = groundPos.add(dx, 0, dz);
+                    BlockPos targetAbove = targetPos.up();
+                    BlockState targetGround = world.getBlockState(targetPos);
+                    BlockState targetAboveState = world.getBlockState(targetAbove);
+
+                    if (targetGround.isOf(Blocks.WATER) && targetAboveState.isAir() && world.isSkyVisible(targetAbove)) {
+                        world.setBlockState(targetPos, Blocks.ICE.getDefaultState());
+                    }
+                }
+            }
+        }
+
+        if (ground.isOf(Blocks.GRASS_BLOCK) && world.isSkyVisible(abovePos)) {
+            int radius = 2 + random.nextInt(2);
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (random.nextFloat() > 0.6f) continue;
+
+                    BlockPos targetPos = groundPos.add(dx, 0, dz);
+                    BlockPos targetAbove = targetPos.up();
+                    BlockState targetGround = world.getBlockState(targetPos);
+                    BlockState targetAboveState = world.getBlockState(targetAbove);
+
+                    boolean isAboveReplaceable = targetAboveState.isAir()
+                            || PROPAGATE_PLANTS.contains(targetAboveState.getBlock())
+                            || targetAboveState.getCollisionShape(world, targetAbove).isEmpty();
+
+                    if (targetGround.isOf(Blocks.GRASS_BLOCK)
+                            && world.isSkyVisible(targetAbove)
+                            && isAboveReplaceable) {
+                        world.setBlockState(targetAbove, Blocks.SNOW.getDefaultState());
+                    }
+                }
+            }
         }
     }
 
@@ -177,7 +212,10 @@ public class WorldGrowthManager {
         if (!ground.isOf(Blocks.GRASS_BLOCK)) return;
         if (!above.isAir() && !PROPAGATE_PLANTS.contains(above.getBlock()) && !above.isOf(Blocks.SHORT_GRASS)) return;
         if (!world.isSkyVisible(abovePos)) return;
-
+        if (random.nextFloat() < 0.2f) {
+            trySpawnGrass(world, ground, above, abovePos);
+            return;
+        }
         List<Block> flowers = PROPAGATE_PLANTS.stream()
                 .filter(b -> b != Blocks.SHORT_GRASS && b != Blocks.FERN)
                 .toList();
