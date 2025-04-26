@@ -82,14 +82,7 @@ public class WorldGrowthManager {
             BlockState ground = world.getBlockState(groundPos);
             BlockState above = world.getBlockState(abovePos);
 
-            SeasonState state = SeasonState.get(world);
-
-            switch (SeasonManager.seasonName(state.getSeason())) {
-                case "Winter" -> tryApplyIce(world, ground, groundPos, abovePos, random);
-                case "Summer" -> tryDehydrateGrass(world, groundPos);
-                case "Spring" -> trySpawnFlowers(world, abovePos, ground, above, random);
-                case "Autumn" -> trySpawnGrass(world, ground, above, abovePos);
-            }
+            trySpawnGrass(world, ground, above, abovePos);
 
             Block block = ground.getBlock();
 
@@ -154,78 +147,6 @@ public class WorldGrowthManager {
             }
         }
     }
-
-    private static void tryApplyIce(ServerWorld world, BlockState ground, BlockPos groundPos, BlockPos abovePos, Random random) {
-        if (ground.isOf(Blocks.WATER) && world.isSkyVisible(abovePos)) {
-            int radius = 2 + random.nextInt(2);
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (random.nextFloat() > 0.6f) continue;
-
-                    BlockPos targetPos = groundPos.add(dx, 0, dz);
-                    BlockPos targetAbove = targetPos.up();
-                    BlockState targetGround = world.getBlockState(targetPos);
-                    BlockState targetAboveState = world.getBlockState(targetAbove);
-
-                    if (targetGround.isOf(Blocks.WATER) && targetAboveState.isAir() && world.isSkyVisible(targetAbove)) {
-                        world.setBlockState(targetPos, Blocks.ICE.getDefaultState());
-                    }
-                }
-            }
-        }
-
-        if (ground.isOf(Blocks.GRASS_BLOCK) && world.isSkyVisible(abovePos)) {
-            int radius = 2 + random.nextInt(2);
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (random.nextFloat() > 0.6f) continue;
-
-                    BlockPos targetPos = groundPos.add(dx, 0, dz);
-                    BlockPos targetAbove = targetPos.up();
-                    BlockState targetGround = world.getBlockState(targetPos);
-                    BlockState targetAboveState = world.getBlockState(targetAbove);
-
-                    boolean isAboveReplaceable = targetAboveState.isAir()
-                            || PROPAGATE_PLANTS.contains(targetAboveState.getBlock())
-                            || targetAboveState.getCollisionShape(world, targetAbove).isEmpty();
-
-                    if (targetGround.isOf(Blocks.GRASS_BLOCK)
-                            && world.isSkyVisible(targetAbove)
-                            && isAboveReplaceable) {
-                        world.setBlockState(targetAbove, Blocks.SNOW.getDefaultState());
-                    }
-                }
-            }
-        }
-    }
-
-    private static void tryDehydrateGrass(ServerWorld world, BlockPos pos) {
-        BlockState state = world.getBlockState(pos);
-        if (state.isOf(Blocks.SHORT_GRASS)) {
-            world.setBlockState(pos, Blocks.SHORT_DRY_GRASS.getDefaultState());
-        } else if (state.isOf(Blocks.TALL_GRASS)) {
-            world.setBlockState(pos, Blocks.TALL_DRY_GRASS.getDefaultState());
-        }
-    }
-
-    private static void trySpawnFlowers(ServerWorld world, BlockPos abovePos, BlockState ground, BlockState above, Random random) {
-        if (!ground.isOf(Blocks.GRASS_BLOCK)) return;
-        if (!above.isAir() && !PROPAGATE_PLANTS.contains(above.getBlock()) && !above.isOf(Blocks.SHORT_GRASS)) return;
-        if (!world.isSkyVisible(abovePos)) return;
-        if (random.nextFloat() < 0.2f) {
-            trySpawnGrass(world, ground, above, abovePos);
-            return;
-        }
-        List<Block> flowers = PROPAGATE_PLANTS.stream()
-                .filter(b -> b != Blocks.SHORT_GRASS && b != Blocks.FERN)
-                .toList();
-
-        if (flowers.isEmpty()) return;
-
-        Block flower = flowers.get(random.nextInt(flowers.size()));
-        world.setBlockState(abovePos, flower.getDefaultState());
-    }
-
 
     private static boolean isTreeLog(Block block) {
         return LOG_TO_SAPLING.containsKey(block);
