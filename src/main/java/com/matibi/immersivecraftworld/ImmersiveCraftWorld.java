@@ -1,7 +1,5 @@
 package com.matibi.immersivecraftworld;
 
-import com.matibi.immersivecraftworld.util.ChunkTracker;
-import com.matibi.immersivecraftworld.world.SeasonManager;
 import com.matibi.immersivecraftworld.world.WorldGrowthManager;
 import net.fabricmc.api.ModInitializer;
 
@@ -15,8 +13,6 @@ public class ImmersiveCraftWorld implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		WorldGrowthManager.register();
-		SeasonManager.register();
-		ChunkTracker.init();
 
 	}
 }
